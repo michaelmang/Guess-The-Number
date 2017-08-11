@@ -111,7 +111,9 @@ defmodule GuessTheNumber do
        end
   end
 
-  def calc_total_guesses(params), :do params = %{params | totalGuesses: params.totalGuesses + params.guesses}
+  def calc_total_guesses(params) do
+    params = %{params | totalGuesses: params.totalGuesses + params.guesses}
+  end
 
   def salutation do
     """
