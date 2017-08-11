@@ -4,12 +4,12 @@ defmodule GuessTheNumber do
     In this game, you think of a number from 1 through n and I will try to guess what it is.\n
     After each guess, enter h if my guess is too high, l if too low, or c if correct.\n
     """
-    |> IO.puts # display the intro message
+    |> IO.puts
     ask_to_play()
   end
 
   def ask_to_play() do
-    with "y\n" <- IO.gets("Would you like to play?\n") do
+    with "y\n" <- IO.gets("Would you like to play? (y/n)\n") do
       start_game()
       |> initialize()
       |> guess()
@@ -28,11 +28,12 @@ defmodule GuessTheNumber do
     |> case do {n, _} -> n end
   end
 
-  def initialize(n, totalGuesses \\ 0) do
+  def initialize(n) do
     num = 0
     upper = n
     lower = 1
     guesses = 0
+    totalGuesses = 0
     games = 1
     match = false
     params =
@@ -61,13 +62,13 @@ defmodule GuessTheNumber do
 
   def guess(params) do
     params
-    |> increment_count()
+    |> increment_guesses()
     |> calc_guess()
     |> check_match()
     |> handle_match()
   end
 
-  def increment_count(params), do: params = %{params | guesses: params.guesses + 1}
+  def increment_guesses(params), do: params = %{params | guesses: params.guesses + 1}
   def calc_guess(params), do: params = %{params | num: div(params.upper + params.lower, 2)}
 
   def check_match(params) do
@@ -97,7 +98,8 @@ defmodule GuessTheNumber do
   end
 
   def end_game(params) do
-    params = %{params | totalGuesses: params.totalGuesses + params.guesses}
+    params
+    |> calc_total_guesses()
     "Your number is #{params.num}.\n"
     <> "It took me #{params.guesses} guesses.\n"
     <> "I averaged #{params.totalGuesses / params.games} guesses per game for #{params.games} game(s).\n"
@@ -108,6 +110,8 @@ defmodule GuessTheNumber do
          _ -> salutation()
        end
   end
+
+  def calc_total_guesses(params), :do params = %{params | totalGuesses: params.totalGuesses + params.guesses}
 
   def salutation do
     """
