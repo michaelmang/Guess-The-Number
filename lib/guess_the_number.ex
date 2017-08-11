@@ -1,75 +1,117 @@
 defmodule GuessTheNumber do
   def main do
-    "In this game, you think of a number from 1 through n and I will try to guess what it is.\n"
-    <> "After each guess, enter h if my guess is too high, l if too low, or c if correct.\n"
-    |> IO.puts
-    |> with do
-      "Please enter a number n: "
-      |> IO.gets
-      |> Integer.parse
-      |> case do {n, _} -> n end
-      |> initialize
+    """
+    In this game, you think of a number from 1 through n and I will try to guess what it is.\n
+    After each guess, enter h if my guess is too high, l if too low, or c if correct.\n
+    """
+    |> IO.puts # display the intro message
+    ask_to_play()
+  end
+
+  def ask_to_play() do
+    with "y\n" <- IO.gets("Would you like to play?\n") do
+      start_game()
+      |> initialize()
+      |> guess()
+    else
+      "n\n" -> salutation()
     end
   end
 
-  def initialize(n, games \\ 0, total \\ 0) do
+  def start_game do
+    """
+    Great! Pick a number that you want me to guess.\n
+    Just let me know what the upper limit:
+    """
+    |> IO.gets
+    |> Integer.parse
+    |> case do {n, _} -> n end
+  end
+
+  def initialize(n, totalGuesses \\ 0) do
+    num = 0
     upper = n
     lower = 1
-    count = 0
-    games = games + 1
-    guess(lower, upper, count, n, games, total)
+    guesses = 0
+    games = 1
+    match = false
+    params =
+      %{n: n,
+        num: num,
+        upper: upper,
+        lower: lower,
+        guesses: guesses,
+        totalGuesses: totalGuesses,
+        games: games,
+        match: match
+      }
   end
 
-  def guess(lower, upper, count, n, games, total) do
-    count = count + 1
-    number = div(upper + lower, 2)
-     if checkMatch(number, lower, upper) do
-       endGame(number, count, n, games, total)
-     else
-       "Is it #{number}?\n"
-       |> IO.gets
-       |> case do
-          "l\n" -> isLow(number, lower, upper, count, n, games, total)
-          "h\n" -> isHigh(number, lower, upper, count, n, games, total)
-          "c\n" -> endGame(number, count, n, games, total)
-          end
-     end
+  def reset(params) do
+    params =
+      %{params |
+        upper: params.n,
+        lower: 1,
+        guesses: 0,
+        games: params.games + 1,
+        match: false
+      }
+    |> guess()
   end
 
-  def checkMatch(number, lower, upper) do
-    if(number == upper && number == lower && lower == upper) do
-      true
+  def guess(params) do
+    params
+    |> increment_count()
+    |> calc_guess()
+    |> check_match()
+    |> handle_match()
+  end
+
+  def increment_count(params), do: params = %{params | guesses: params.guesses + 1}
+  def calc_guess(params), do: params = %{params | num: div(params.upper + params.lower, 2)}
+
+  def check_match(params) do
+    if(params.num == params.upper && params.num == params.lower && params.lower == params.upper) do
+      params = %{params | match: true}
     else
-      false
+      params = %{params | match: false}
     end
   end
 
-  def isLow(number, lower, upper, count, n, games, total) do
-    lower = number + 1
-    guess(lower, upper, count, n, games, total)
-  end
-
-  def isHigh(number, lower, upper, count, n, games, total) do
-    upper = number - 1
-    guess(lower, upper, count, n, games, total)
-  end
-
-  def endGame(number, count, n, games, total) do
-    total = total + count
-    "Your number is #{number}.\n"
-    <> "It took me #{count} guesses.\n"
-    <> "I averaged #{total / games} guesses per game for #{games} game(s).\n"
-    <> "Play again? (y/n)\n"
-    |> IO.gets
+  def handle_match(params) do
+    params.match
     |> case do
-         "y\n" -> reset(n, games, total)
-         "yes\n" -> reset(n, games, total)
-         _ -> "Have a good day!"
+       true -> end_game(params)
+       false -> ask(params)
        end
   end
 
-  def reset(n, games, total) do
-    initialize(n, games, total)
+  def ask(params) do
+    "Is it #{params.num}? (h, l, c)\n"
+    |> IO.gets
+    |> case do
+       "l\n" -> guess(%{params | lower: params.num + 1})
+       "h\n" -> guess(%{params | upper: params.num - 1})
+       "c\n" -> end_game(params)
+       end
   end
 
+  def end_game(params) do
+    params = %{params | totalGuesses: params.totalGuesses + params.guesses}
+    "Your number is #{params.num}.\n"
+    <> "It took me #{params.guesses} guesses.\n"
+    <> "I averaged #{params.totalGuesses / params.games} guesses per game for #{params.games} game(s).\n"
+    <> "Play again? (y/n)\n"
+    |> IO.gets
+    |> case do
+         "y\n" -> reset(params)
+         _ -> salutation()
+       end
+  end
+
+  def salutation do
+    """
+    Thanks for playing! Hope to see you soon.
+    """
+  end
 end
